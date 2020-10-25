@@ -1,0 +1,370 @@
+#ifndef _Request_history_h
+#define _Request_history_h 1
+
+#include "Array.h"
+#include "MD5.h"
+#include "Digest.h"
+#include "types.h"
+#include "DSum.h"
+
+template <class AReq, class Param = int>
+class Rh_entry
+{
+public:
+   inline Rh_entry()
+   {
+       req = NULL;
+       seq = 0;
+   }
+
+   inline Rh_entry(AReq *r, Seqno s, Digest d)
+   {
+      req = r;
+      seq = s;
+      d_h = d;
+   }
+
+   inline Rh_entry(AReq *r, Seqno s, Digest d, Param p)
+   {
+      req = r;
+      seq = s;
+      d_h = d;
+      param = p;
+   }
+
+   inline ~Rh_entry()
+   {
+   }
+
+   AReq *req;
+   Seqno seq;
+   Digest d_h;
+   Param param;
+
+   inline Request_id& request_id() const
+   {
+       return req->request_id();
+   }
+
+   inline Seqno seqno() const
+   {
+       return seq;
+   }
+
+   inline Digest& digest()
+   {
+       return d_h;
+   }
+};
+
+template <class AReq, class Param = int>
+class Req_history_log
+{
+
+public:
+   // Overview : This is a request history log with request entries ordered
+   // by the assigned sequence numbers.
+
+   // How many requests will we purge
+   static const int TRUNCATE_SIZE = 256;
+
+   Req_history_log();
+   // Effects: Creates an empty table.
+
+   ~Req_history_log();
+   // Effects: Deletes table
+
+   bool add_request(AReq *req, Seqno seq, Digest &d, Param param = 0);
+   // Creates an entry for the request in the request history log
+   // Returns true if the request has been correctly added.
+
+   bool truncate_history(Seqno seq);
+   // purges the history for amount entries up to rid
+   bool truncate_history(Seqno seq, void (*request_callback)(AReq*,Param));
+
+   bool should_checkpoint();
+   // returns true if truncation threshold is reached, and we're not waiting for the confirmation
+   bool should_checkpoint(bool (*request_callback)(AReq*,Param));
+
+   Seqno get_top_seqno() const;
+   // returns the Request_id at the top
+
+   Digest rh_digest();
+   // returns the last digest
+
+   bool get_next_checkpoint_data(Seqno &seqno, Digest &digest);
+   // returns if there is any last data to be included in checkpoint, and sets values acordingly
+
+   void advance_checkpoint_info();
+   // advances the pointers
+
+   int size() const;
+
+   Array<Rh_entry<AReq,Param> >& array();
+
+   Rh_entry<AReq,Param>* find(int cid, Request_id rid);
+
+private:
+   Array<Rh_entry<AReq,Param> > rh;
+   DSum rh_d; // Adhash sum of the history
+   DSum* others;
+   DSum* my_dsum;
+
+   // for administrative things, like keeping track of digests...
+   static const unsigned int TRACK_HISTORY_SIZE = 1024; // means keeps seqnos and digests of last x checkpoints
+   unsigned int track_index;
+   Seqno track_seqnos[TRACK_HISTORY_SIZE];
+   Digest track_digests[TRACK_HISTORY_SIZE];
+
+   Seqno last_checkpointed; // This is the last one we sent out...
+   long long totally_added;
+};
+
+template <class AReq, class Param>
+Req_history_log<AReq,Param>::Req_history_log() :
+   rh(512)
+{
+   track_index = 0;
+   last_checkpointed = 0;
+   totally_added = 0;
+
+   // The random modulus for computing sums in AdHASH.
+   others = DSum::M;
+   DSum::M = my_dsum = new DSum;
+   mpn_set_str(
+         DSum::M->sum,
+         (unsigned char*)"d2a10a09a80bc599b4d60bbec06c05d5e9f9c369954940145b63a1e2",
+         DSum::nbytes, 16);
+
+   DSum::M = others;
+   if (sizeof(Digest)%sizeof(mp_limb_t) != 0)
+   {
+      th_fail("Invalid assumption: sizeof(Digest)%sizeof(mp_limb_t)");
+   }
+   for (unsigned int i=0; i<TRACK_HISTORY_SIZE; i++) {
+       track_seqnos[i] = 0;
+   }
+}
+
+template <class AReq, class Param>
+Req_history_log<AReq,Param>::~Req_history_log()
+{
+    for (int i=0; i<rh.size(); i++)
+	if (rh[i].req != NULL)
+	    delete rh[i].req;
+    rh.clear();
+    delete my_dsum;
+    DSum::M = others;
+}
+
+template <class AReq, class Param>
+Digest Req_history_log<AReq,Param>::rh_digest()
+{
+   // MD5(i, last modification seqno, (data,size)
+   Digest d_h;
+
+   MD5_CTX ctx;
+   MD5Init(&ctx);
+   MD5Update(&ctx, (char*)&rh_d.sum, DSum::nbytes);
+   MD5Final(d_h.udigest(), &ctx);
+   return d_h;
+}
+
+template <class AReq, class Param>
+Seqno Req_history_log<AReq,Param>::get_top_seqno() const
+{
+    if (rh.size() == 0)
+	return 0;
+    return rh.high().seqno();
+}
+
+template <class AReq, class Param>
+bool Req_history_log<AReq,Param>::add_request(AReq *req, Seqno s, Digest &d, Param param)
+{
+   others = DSum::M;
+   DSum::M = my_dsum;
+   rh_d.add(req->digest());
+   d = rh_digest();
+
+   Rh_entry<AReq,Param> rhe(req, s, d, param);
+
+   rh.append(rhe);
+
+   totally_added++;
+
+   //fprintf(stderr, "add-request: Adding request %lld at pos %d\n", s, size());
+   if (totally_added && (totally_added % TRUNCATE_SIZE == 0)) {
+       int pick_up_index = (rh.high().seqno()-last_checkpointed);
+       pick_up_index = pick_up_index - pick_up_index%TRUNCATE_SIZE;
+       pick_up_index--;
+       if (rh[pick_up_index].seqno() == last_checkpointed)
+	   pick_up_index += TRUNCATE_SIZE;
+       //fprintf(stderr, "Tracking at position %d, values <%lld/%lld>, track id %d, <%lld>\n", pick_up_index, rh[pick_up_index].seqno(), rh.high().seqno(), track_index, last_checkpointed);
+       track_seqnos[track_index] = rh[pick_up_index].seqno();
+       track_digests[track_index] = rh[pick_up_index].digest();
+       track_index = (track_index+1) % TRACK_HISTORY_SIZE;
+   }
+
+   DSum::M = others;
+   return true;
+}
+
+template <class AReq, class Param>
+bool Req_history_log<AReq,Param>::truncate_history(Seqno seq)
+{
+   // return false when rid is not in the list
+   bool found = false;
+   int pos = 0;
+   for (int i=0; i<rh.size(); i++) {
+       if (rh[i].seqno() == seq) {
+	   found = true;
+	   pos = i;
+	   break;
+       }
+   }
+   if (!found)
+       return false;
+
+   for (int i=0; i<=pos; i++) {
+       if (rh[i].req != NULL) {
+           delete rh[i].req;
+       }
+       rh[i].req = NULL;
+   }
+
+   for (int i=pos+1; i<rh.size(); i++)
+       rh[i-pos-1] = rh[i];
+
+   rh.enlarge_to(rh.size()-pos-1);
+   return true;
+}
+
+template <class AReq, class Param>
+bool Req_history_log<AReq,Param>::truncate_history(Seqno seq_limit, void (*request_callback)(AReq*,Param))
+{
+   // return false when rid is not in the list
+    //fprintf(stderr, "seq_limit %lld\n", seq_limit);
+   bool found = false;
+   int pos = 0;
+   for (int i=0; i<rh.size(); i++) {
+       if (rh[i].seqno() == seq_limit) {
+	   found = true;
+	   pos = i;
+	   break;
+       }
+   }
+   if (!found)
+       return false;
+
+   for (int i=0; i<=pos; i++) {
+       if (rh[i].req != NULL) {
+	   request_callback(rh[i].req,rh[i].param);
+       }
+       rh[i].req = NULL;
+   }
+
+   for (int i=pos+1; i<rh.size(); i++)
+       rh[i-pos-1] = rh[i];
+
+   rh.enlarge_to(rh.size()-pos-1);
+   return true;
+}
+
+template <class AReq, class Param>
+int Req_history_log<AReq,Param>::size() const
+{
+   return rh.size();
+}
+
+template <class AReq, class Param>
+Array<Rh_entry<AReq,Param> >& Req_history_log<AReq,Param>::array()
+{
+   return rh;
+}
+
+template <class AReq, class Param>
+bool Req_history_log<AReq,Param>::should_checkpoint()
+{
+    //if (size() && (size() % TRUNCATE_SIZE) == 0)
+    if (size() && (totally_added >= last_checkpointed + TRUNCATE_SIZE))
+	return true;
+
+    return false;
+}
+template <class AReq, class Param>
+bool Req_history_log<AReq,Param>::should_checkpoint(bool (*request_callback)(AReq*, Param))
+{
+    if (!should_checkpoint())
+	return false;
+
+    bool should = true;
+    int pos = 0;
+    int rh_size = rh.size();
+    while (should && pos < rh_size && rh.slot(pos).seqno() <= last_checkpointed + TRUNCATE_SIZE) {
+	should = should && request_callback(rh.slot(pos).req, rh.slot(pos).param);
+	pos++;
+    }
+
+    return should;
+}
+
+template <class AReq, class Param>
+Rh_entry<AReq,Param> *Req_history_log<AReq,Param>::find(int cid, Request_id rid)
+{
+    for(int i=0; i<rh.size(); i++) {
+	if (rh.slot(i).req
+		&& rh.slot(i).req->client_id() == cid
+		&& rh.slot(i).req->request_id() == rid) {
+	    return &rh.slot(i);
+	}
+    }
+    return NULL;
+}
+
+template <class AReq, class Param>
+bool Req_history_log<AReq,Param>::get_next_checkpoint_data(Seqno &seqno, Digest &digest)
+{
+    //fprintf(stderr, "Looking for %lld, high pos = %d\n", last_checkpointed+TRUNCATE_SIZE, track_index);
+    unsigned last_index = (track_index-1+TRACK_HISTORY_SIZE)%TRACK_HISTORY_SIZE;
+    if (last_checkpointed == 0 && size() >= TRUNCATE_SIZE) {
+	seqno = track_seqnos[last_index];
+	digest = track_digests[last_index];
+	return true;
+    }
+    bool found = false;
+    while (last_index != track_index && !found) {
+	//fprintf(stderr, "Comparing <%lld> == <%lld>, pos = %d\n", track_seqnos[last_index],last_checkpointed+TRUNCATE_SIZE, last_index);
+	//fprintf(stderr, "C[%d,%lld] ", last_index, track_seqnos[last_index]);
+	if (track_seqnos[last_index] == last_checkpointed+TRUNCATE_SIZE) {
+	    found = true;
+	    break;
+	}
+	last_index = (last_index-1+TRACK_HISTORY_SIZE)%TRACK_HISTORY_SIZE;
+    }
+    if (found) {
+	seqno = track_seqnos[last_index];
+	digest = track_digests[last_index];
+	    //fprintf(stderr, "Returning seqno %lld\n", seqno);
+    } else {
+    	// last chance
+	if (track_seqnos[track_index] == last_checkpointed+TRUNCATE_SIZE) {
+                //fprintf(stderr, "Almost Could not find next checkpoint data %lld, pos = %d\n", last_checkpointed+TRUNCATE_SIZE, track_index);
+	    seqno = track_seqnos[track_index];
+	    digest = track_digests[track_index];
+	    track_index = (track_index+1)%TRACK_HISTORY_SIZE;
+	    return true;
+	}
+    	fprintf(stderr, "Could not find next checkpoint data %lld\n", last_checkpointed+TRUNCATE_SIZE);
+    	unsigned last_index = (track_index-1+TRACK_HISTORY_SIZE)%TRACK_HISTORY_SIZE;
+    	fprintf(stderr, "entry in last index is %lld\n", track_seqnos[track_index]);
+    }
+    return found;
+}
+
+template <class AReq, class Param>
+void Req_history_log<AReq,Param>::advance_checkpoint_info()
+{
+    last_checkpointed += TRUNCATE_SIZE;
+}
+
+#endif

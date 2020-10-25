@@ -1,0 +1,121 @@
+#include <stdio.h>
+#include <string.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <sys/param.h>
+#include <unistd.h>
+
+#include <ldap.h>
+
+extern "C"
+{
+#include "ldapsearch.h"
+}
+#include "th_assert.h"
+#include "Traces.h"
+
+
+int main(int argc, char **argv)
+{
+
+
+	char * command[10];// string tokens
+	//Initialize array
+	for(int j=0; j<10;j++){	command[j]=NULL;}
+
+	char *token;
+	const char delimiters[] = " ;:!	";
+	int args_nb;
+	LDAPResult *result,*tmp;
+	result=NULL;
+
+	char contents[]="ldapsearch -x -b dc=exper,dc=abstracts,dc=emulab,dc=net";//  -s base (objectclass=*) ";
+
+	fprintf(stderr, "Tester: Started parsing string: %s \n",contents);
+
+	// Parsing request message into tokens in var
+
+
+	if(contents==NULL)
+	{
+		fprintf( stderr,"exec_command wrong request message; exiting ... \n");
+		return -1;
+	}
+
+
+
+	char *request;
+	request=strdupa(contents);//hard copy
+
+	token = strtok(request, delimiters);//first token parse
+	args_nb=0;
+	if(token!=NULL){
+		command[args_nb]=(char*)malloc(strlen(token)*sizeof(char));
+		strcpy(command[args_nb],token);
+		args_nb++;
+	}
+	fprintf(stderr, "\n\nToken: %s\n",command[args_nb-1]);
+
+	while(token!=NULL){
+		token = strtok(NULL, delimiters);//get new token
+		if(token!=NULL){
+		fprintf(stderr, "Token: %s\n",token);
+		command[args_nb]=(char*)malloc(strlen(token)*sizeof(char));
+		strcpy(command[args_nb],token);
+		args_nb++;
+		}
+	}
+
+	//call LDAP Tool ldapsearch
+
+	if(strcmp(command[0],"ldapsearch")!=0){
+
+		fprintf( stderr,"replica-main error: request is not an ldapsearch , exiting ... \n");
+		return -1;
+	}
+
+	fprintf(stderr, "\nCalling ldapsearch now:\n");
+
+	int rc;
+
+for (int kk=0;kk<10;kk++) {
+fprintf(stderr, "DOING LOOP %d\n", kk);
+
+if (result != NULL) {
+	free(result);
+result = NULL;
+}
+	rc=ldapsearch_main(&result,args_nb,command);
+	if(rc== EXIT_FAILURE)
+	{
+		fprintf( stderr,"Error calling ldapsearch_main, exiting ... \n");
+		return -1;
+	}
+	
+	tmp=result;
+	const ssize_t MAX_RES = 1024;
+	char result_all[1024]="\0";
+	printf("================================\nFinal Results:\n============\n");
+/*	while(tmp!=NULL)
+	{
+	int k,l;
+	k=l=0;                                
+	if(tmp->values!=NULL)
+      		for (k = 0; k<tmp->nb_attr; k++ )
+                	for (l = 0; l<tmp->nb_values[k]; l++ )
+			{ // Print the name of the attribute and each value
+			printf( "%s:::%s \n",tmp->attributes[k],tmp->values[k][l]);
+			strncat(result_all,"<", MAX_RES);
+			strncat(result_all,tmp->attributes[k], MAX_RES);
+			strncat(result_all,":", MAX_RES);
+			strncat(result_all,tmp->values[k][l], MAX_RES);
+			strncat(result_all,">\n", MAX_RES);
+			
+			}
+        tmp=tmp->next;           
+	}
+	printf("\n This is the result_all:\n%s\n",result_all);
+*/}
+	return 0;
+
+}

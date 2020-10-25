@@ -1,0 +1,19 @@
+PBFT_R_NV_info.o: PBFT_R_NV_info.cc PBFT_R_NV_info.h PBFT_R_Bitmap.h \
+ ../bits.h ../th_assert.h ../fail.h ../parameters.h \
+ ../../../common/types.h PBFT_R_Time.h PBFT_R_Cycle_counter.h \
+ ../../../protocols/common/Digest.h PBFT_R_Pre_prepare_info.h \
+ PBFT_R_Pre_prepare.h PBFT_R_Prepare.h PBFT_R_Message.h \
+ PBFT_R_Message_tags.h PBFT_R_Log_allocator.h \
+ ../../../protocols/common/Array.h PBFT_R_Replica.h PBFT_R_State_defs.h \
+ PBFT_R_Req_queue.h ../Log.h ../parameters.h \
+ ../../../protocols/common/Set.h PBFT_R_Certificate.h \
+ PBFT_R_Prepared_cert.h PBFT_R_Node.h PBFT_R_Principal.h ../umac.h \
+ PBFT_R_ITimer.h PBFT_R_Request.h ../../../common/libbyz.h \
+ ../../../common/types.h ../../../common/Traces.h PBFT_R_Statistics.h \
+ PBFT_R_View_info.h PBFT_R_Rep_info.h PBFT_R_Reply.h \
+ PBFT_R_Stable_estimator.h PBFT_R_Partition.h PBFT_R_pbft_libbyz.h \
+ PBFT_R_State.h ../../../protocols/common/DSum.h PBFT_R_Big_req_table.h \
+ ../map.h ../basic.h ../generator.h ../bhash.h ../buckets.h \
+ ../th_assert.h ../../../common/Switcher.h ../../../common/libbyz.h \
+ PBFT_R_View_change.h PBFT_R_View_change_ack.h PBFT_R_New_view.h \
+ PBFT_R_Status.h ../K_max.h

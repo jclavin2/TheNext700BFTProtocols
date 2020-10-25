@@ -1,0 +1,109 @@
+default_target: all
+.PHONY : default_target
+
+TOP := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
+
+include $(SYMBOLSPATH)
+
+MAININCLUDEDIR := $(TOP)/include
+GMPINCLUDE := -I$(TOP)/../gmp
+SFSINCLUDE := -I$(TOP)/../sfs/include
+
+# When used, COMMON_INCS must be included before SFS!
+COMMON_INCS:= -I$(TOP)/common \
+			  -I$(TOP)/protocols/common \
+			  -I$(TOP)/modular_bft
+
+PROTO_INCS := $(COMMON_INCS) \
+	        -I$(TOP)/protocols/quorum \
+			-I$(TOP)/protocols/zlight \
+			-I$(TOP)/protocols/chain  \
+			-I$(TOP)/protocols/ring   \
+			-I$(TOP)/protocols/pbft   \
+			-I$(TOP)/protocols/pbft/replica \
+			-I$(TOP)/protocols/pbft/client
+
+INCLUDES := -I$(MAININCLUDEDIR) $(GMPINCLUDE) $(SFSINCLUDE)
+SINCS := -I/usr/include/linux -I/usr/include -I/usr/lib/gcc/i486-linux-gnu/4.3/include/ -I/usr/include/c++/4.3.3
+
+SRCPATH := $(TOP)/src
+
+# unset this if you don't want dependencies to be generated
+DEPENDENCIES := -MMD
+
+DEFINES := -DDO_TIMINGS -DDO_TIMINGS_TICKS -DDEBUG -DRECOVERY
+
+DEBUG_FLAGS := -O0 -g -ggdb #-m32
+C_OPT_FLAGS   := -O3 -march=native -fomit-frame-pointer -mpreferred-stack-boundary=4 -minline-all-stringops
+CXX_OPT_FLAGS   := $(C_OPT_FLAGS)
+
+CFLAGS ?= $(C_OPT_FLAGS) -Wall $(DEBUG_FLAGS) $(DEPENDENCIES) $(DEFINES) $(INCLUDES)
+CFLAGSP ?= $(CFLAGS) -I$(MAININCLUDEDIR)
+
+CXXFLAGS ?= $(CXX_OPT_FLAGS) -Wno-non-template-friend $(DEBUG_FLAGS) $(DEPENDENCIES) $(DEFINES) $(INCLUDES)
+CPPFLAGS ?= $(CXXFLAGS)
+
+LIBDIRS:=-L$(TOP)/../gmp -L$(TOP)/../sfs/lib/sfslite -L$(TOP)/
+#LIBS ?= -lzmq -lconfig
+BFTLIB:=$(TOP)/lib.a
+
+AR:=ar
+RANLIB:=ranlib
+MAKEDEPEND:=makedepend -Y
+
+#CCACHE=ccache
+CCACHE=
+
+CC:=$(CCACHE) g++
+C:=$(CCACHE) gcc
+CCLINK:=$(CCACHE) g++
+CLINK:=$(CCACHE) gcc
+CCDEP:=$(CCACHE) g++
+CDEP:=$(CCACHE) gcc
+#CC:=gccrec g++-code-assist
+#C:=gccrec gcc-code-assist
+
+PARALLEL_MAKE=#-j 8
+
+%.o:: %.cc
+	$(CC) $(CPPFLAGS) -o $@ -c $<
+
+%.o:: %.c
+	$(C) $(CFLAGS) -o $@ -c $<
+
+
+common-clean:
+	@echo "Cleaning..."
+	@-rm -f *.o
+	@-rm -f *.d
+	@-rm -f *~
+
+common-clobber: common-clean
+
+### Pretty output control ###
+# Set up compiler and linker commands that either is quiet (does not print 
+# the command line being executed) or verbose (print the command line). 
+_CC := $(CC)
+_C := $(C)
+_CCDEP := $(CCDEP)
+_CDEP := $(CDEP)
+_CCLINK := $(CCLINK)
+_CLINK := $(CLINK)
+
+ifeq ($(V),1)
+ override V_PREFIX :=
+ override C = $(_C)
+ override CC = $(_CC)
+ override CLINK = $(_CLINK)
+ override CCLINK = $(_CCLINK)
+ override CDEP = $(_CDEP)
+ override CCDEP = $(_CCDEP)
+else
+ override V_PREFIX := @
+ override C = @echo      "\t[C]  COMPILE         $<"; $(_C)
+ override CC = @echo     "\t[CC] COMPILE         $<"; $(_CC)
+ override CLINK = @echo  "\t[C]  LINKING         $@"; $(_CLINK)
+ override CCLINK = @echo "\t[CC] LINKING         $@"; $(_CCLINK)
+ override CDEP = @echo   "\t[C]  DEPGEN          $@"; $(_CDEP)
+ override CCDEP = @echo  "\t[CC] DEPGEN          $@"; $(_CCDEP)
+endif

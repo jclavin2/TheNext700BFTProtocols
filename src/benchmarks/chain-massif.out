@@ -1,0 +1,181 @@
+==2123== Massif, a heap profiler.
+==2123== Copyright (C) 2003-2007, and GNU GPL'd, by Nicholas Nethercote
+==2123== Using LibVEX rev 1804, a library for dynamic binary translation.
+==2123== Copyright (C) 2004-2007, and GNU GPL'd, by OpenWorks LLP.
+==2123== Using valgrind-3.3.0-Debian, a dynamic binary instrumentation framework.
+==2123== Copyright (C) 2000-2007, and GNU GPL'd, by Julian Seward et al.
+==2123== 
+==2123== My PID = 2123, parent PID = 1285.  Prog and args are:
+==2123==    ./server
+==2123==    replica-0-1
+==2123==    3364
+==2123==    4364
+==2123==    5364
+==2123==    8
+==2123==    0
+==2123==    ../../config_private/config_quorum_f_1_clients
+==2123==    ../../config_private/config_backup_BFT_f_1
+==2123==    ../../config_private
+==2123==    ../../config_private/config_chain_f_1
+==2123==    0
+==2123==    0
+==2123== 
+--2123-- 
+--2123-- Command line
+--2123--    ./server
+--2123--    replica-0-1
+--2123--    3364
+--2123--    4364
+--2123--    5364
+--2123--    8
+--2123--    0
+--2123--    ../../config_private/config_quorum_f_1_clients
+--2123--    ../../config_private/config_backup_BFT_f_1
+--2123--    ../../config_private
+--2123--    ../../config_private/config_chain_f_1
+--2123--    0
+--2123--    0
+--2123-- Startup, with flags:
+--2123--    --tool=massif
+--2123--    --log-file=memcheck.txt
+--2123--    -v
+--2123-- Contents of /proc/version:
+--2123--   Linux version 2.6.24-28-generic (buildd@vernadsky) (gcc version 4.2.4 (Ubuntu 4.2.4-1ubuntu3)) #1 SMP Wed Aug 25 15:25:41 UTC 2010
+--2123-- Arch and hwcaps: X86, x86-sse1-sse2
+--2123-- Page sizes: currently 4096, max supported 4096
+--2123-- Valgrind library directory: /usr/lib/valgrind
+--2123-- Massif: alloc-fns:
+--2123-- Massif:   0: malloc
+--2123-- Massif:   1: __builtin_new
+--2123-- Massif:   2: operator new(unsigned)
+--2123-- Massif:   3: operator new(unsigned long)
+--2123-- Massif:   4: __builtin_vec_new
+--2123-- Massif:   5: operator new[](unsigned)
+--2123-- Massif:   6: operator new[](unsigned long)
+--2123-- Massif:   7: calloc
+--2123-- Massif:   8: realloc
+--2123-- Massif:   9: memalign
+--2123-- Massif:   10: operator new(unsigned, std::nothrow_t const&)
+--2123-- Massif:   11: operator new[](unsigned, std::nothrow_t const&)
+--2123-- Massif:   12: operator new(unsigned long, std::nothrow_t const&)
+--2123-- Massif:   13: operator new[](unsigned long, std::nothrow_t const&)
+--2123-- Reading syms from /lib/ld-2.7.so (0x4000000)
+--2123-- Reading debug info from /lib/ld-2.7.so...
+--2123-- ... CRC mismatch (computed 7fa7f4cc wanted 070f79e4)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /proj/abstracts/BFT/src/benchmarks/server (0x8048000)
+--2123-- Reading syms from /usr/lib/valgrind/x86-linux/massif (0x38000000)
+--2123--    object doesn't have a dynamic symbol table
+--2123-- Reading syms from /usr/lib/valgrind/x86-linux/vgpreload_core.so (0x401E000)
+--2123-- Reading syms from /usr/lib/valgrind/x86-linux/vgpreload_massif.so (0x4020000)
+--2123-- Reading syms from /usr/lib/libgmp.so.3.4.2 (0x402B000)
+--2123-- Reading debug info from /usr/lib/libgmp.so.3.4.2...
+--2123-- ... CRC mismatch (computed 380849f8 wanted 3eb8e3f7)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /lib/tls/i686/cmov/libpthread-2.7.so (0x406F000)
+--2123-- Reading debug info from /lib/tls/i686/cmov/libpthread-2.7.so...
+--2123-- ... CRC mismatch (computed ad1a7762 wanted effcce0a)
+--2123-- Reading syms from /usr/lib/libsqlite3.so.0.8.6 (0x4088000)
+--2123-- Reading debug info from /usr/lib/libsqlite3.so.0.8.6...
+--2123-- ... CRC mismatch (computed 8beb86f3 wanted 4e868024)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /usr/lib/libldap_r-2.4.so.2.0.5 (0x40ED000)
+--2123-- Reading debug info from /usr/lib/libldap_r-2.4.so.2.0.5...
+--2123-- ... CRC mismatch (computed e331f18a wanted e7ee15db)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /usr/lib/liblber-2.4.so.2.0.5 (0x412D000)
+--2123-- Reading debug info from /usr/lib/liblber-2.4.so.2.0.5...
+--2123-- ... CRC mismatch (computed beb40dc5 wanted a58aedb7)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /usr/lib/libstdc++.so.6.0.9 (0x413A000)
+--2123-- Reading debug info from /usr/lib/libstdc++.so.6.0.9...
+--2123-- ... CRC mismatch (computed b24bea06 wanted 69349987)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /lib/tls/i686/cmov/libm-2.7.so (0x422D000)
+--2123-- Reading debug info from /lib/tls/i686/cmov/libm-2.7.so...
+--2123-- ... CRC mismatch (computed a35b3de9 wanted 4dd52e16)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /lib/libgcc_s.so.1 (0x4252000)
+--2123-- Reading debug info from /lib/libgcc_s.so.1...
+--2123-- ... CRC mismatch (computed f32b6bb2 wanted ef5e2665)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /lib/tls/i686/cmov/libc-2.7.so (0x425E000)
+--2123-- Reading debug info from /lib/tls/i686/cmov/libc-2.7.so...
+--2123-- ... CRC mismatch (computed a60c1faf wanted 4edc7d98)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /lib/tls/i686/cmov/libdl-2.7.so (0x43AD000)
+--2123-- Reading debug info from /lib/tls/i686/cmov/libdl-2.7.so...
+--2123-- ... CRC mismatch (computed fac4a183 wanted 83d3211b)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /lib/tls/i686/cmov/libresolv-2.7.so (0x43B1000)
+--2123-- Reading debug info from /lib/tls/i686/cmov/libresolv-2.7.so...
+--2123-- ... CRC mismatch (computed 359a7223 wanted 93eaaed0)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /usr/lib/libsasl2.so.2.0.22 (0x43C4000)
+--2123-- Reading debug info from /usr/lib/libsasl2.so.2.0.22...
+--2123-- ... CRC mismatch (computed 39b65d6d wanted b83d87d8)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /usr/lib/libgnutls.so.13.9.1 (0x43DB000)
+--2123-- Reading debug info from /usr/lib/libgnutls.so.13.9.1...
+--2123-- ... CRC mismatch (computed 8ecdd6e0 wanted 9a5b0761)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /usr/lib/libtasn1.so.3.0.12 (0x4452000)
+--2123-- Reading debug info from /usr/lib/libtasn1.so.3.0.12...
+--2123-- ... CRC mismatch (computed b3b23d5d wanted 2aa46b39)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /usr/lib/libz.so.1.2.3.3 (0x4462000)
+--2123-- Reading debug info from /usr/lib/libz.so.1.2.3.3...
+--2123-- ... CRC mismatch (computed 25027216 wanted 76420f5a)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /lib/libgcrypt.so.11.2.3 (0x4477000)
+--2123-- Reading debug info from /lib/libgcrypt.so.11.2.3...
+--2123-- ... CRC mismatch (computed 9a6098cd wanted 550c6a4b)
+--2123--    object doesn't have a symbol table
+--2123-- Reading syms from /lib/libgpg-error.so.0.3.0 (0x44C4000)
+--2123-- Reading debug info from /lib/libgpg-error.so.0.3.0...
+--2123-- ... CRC mismatch (computed ef4fd674 wanted 430c8227)
+--2123--    object doesn't have a symbol table
+--2123-- REDIR: 0x42cbcc0 (malloc) redirected to 0x4022070 (malloc)
+--2123-- REDIR: 0x42cd500 (free) redirected to 0x4021c10 (free)
+--2123-- REDIR: 0x42cd6f0 (realloc) redirected to 0x4022130 (realloc)
+--2123-- REDIR: 0x42cb9d0 (calloc) redirected to 0x4021190 (calloc)
+--2123-- REDIR: 0x42cb2e0 (valloc) redirected to 0x4022cb0 (valloc)
+--2123-- Reading syms from /lib/tls/i686/cmov/libnss_files-2.7.so (0x58DC000)
+--2123-- Reading debug info from /lib/tls/i686/cmov/libnss_files-2.7.so...
+--2123-- ... CRC mismatch (computed dd9214fd wanted 2d0ea740)
+--2123--    object doesn't have a symbol table
+--2123-- Discarding syms at 0x58DC000-0x58E7000 in /lib/tls/i686/cmov/libnss_files-2.7.so due to munmap()
+==2123== 
+--2123-- Massif: heap allocs:          2406942
+--2123-- Massif: heap reallocs:        200004
+--2123-- Massif: heap frees:           2405876
+--2123-- Massif: stack allocs:         0
+--2123-- Massif: stack frees:          0
+--2123-- Massif: XPts:                 999
+--2123-- Massif: top-XPts:             59 (5%)
+--2123-- Massif: XPt init expansions:  885
+--2123-- Massif: XPt later expansions: 9
+--2123-- Massif: SXPt allocs:          5786
+--2123-- Massif: SXPt frees:           5150
+--2123-- Massif: skipped snapshots:    5011678
+--2123-- Massif: real snapshots:       1163
+--2123-- Massif: detailed snapshots:   126
+--2123-- Massif: peak snapshots:       18
+--2123-- Massif: cullings:             22
+--2123-- Massif: XCon redos:           0
+--2123-- translate:            fast SP updates identified: 0 (   --%)
+--2123-- translate:   generic_known SP updates identified: 0 (   --%)
+--2123-- translate: generic_unknown SP updates identified: 0 (   --%)
+--2123--     tt/tc: 4,177,164 tt lookups requiring 4,178,549 probes
+--2123--     tt/tc: 4,177,164 fast-cache updates, 3 flushes
+--2123--  transtab: new        8,490 (203,641 -> 1,268,175; ratio 62:10) [0 scs]
+--2123--  transtab: dumped     0 (0 -> ??)
+--2123--  transtab: discarded  123 (2,352 -> ??)
+--2123-- scheduler: 933,671,565 jumps (bb entries).
+--2123-- scheduler: 14,809/11,821,865 major/minor sched events.
+--2123--    sanity: 14810 cheap, 152 expensive checks.
+--2123--    exectx: 769 lists, 0 contexts (avg 0 per list)
+--2123--    exectx: 0 searches, 0 full compares (0 per 1000)
+--2123--    exectx: 0 cmp2, 0 cmp4, 0 cmpAll
+--2123--  errormgr: 0 supplist searches, 0 comparisons during search
+--2123--  errormgr: 0 errlist searches, 0 comparisons during search

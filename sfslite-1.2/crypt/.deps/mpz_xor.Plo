@@ -1,0 +1,3 @@
+mpz_xor.lo: mpz_xor.C ../config.h
+
+../config.h:

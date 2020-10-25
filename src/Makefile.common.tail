@@ -1,0 +1,28 @@
+DEPS := $(OBJ_FILES:.o=.d)
+
+depend: $(DEPS)
+	@echo "Generating dependencies for $(DEPS)"
+
+ifeq ($(MAKECMDGOALS),depend)
+%.d: %.cc
+	$(CCDEP) $(CXXFLAGS) -MM -o $@ -c $<
+
+%.d: %.c
+	$(CDEP) $(CFLAGS) -MM -o $@ -c $<
+
+endif
+
+.PHONY: common-clean common-clobber 
+
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),clobber)
+ifneq ($(MAKECMDGOALS),common-clean)
+ifneq ($(MAKECMDGOALS),common-clobber)
+-include $(DEPS)
+endif
+endif
+endif
+endif
+
+
+
